@@ -69,12 +69,14 @@ func Update(c *gin.Context) {
 		return
 	}
 
+	var existingDriver domains.Driver
+	app.DB.Where("name == ? and email == ?", driver.Name, driver.Email).First(&existingDriver)
+	if existingDriver.Name == driver.Name && existingDriver.Email == driver.Email {
+		c.JSON(http.StatusConflict, gin.H{"error": "Record already exists!"})
+		return
+	}
+
 	if err := app.DB.Where("id = ?", id).Updates(&driver).Error; err != nil {
-		// if existingDriver := app.DB.Where("name == ? and email == ?", driver.Name, driver.Email); existingDriver != nil {
-		// 	c.JSON(http.StatusConflict, gin.H{"error": "Record already exists!"})
-		// 	return
-		// }
-		//!doesn't work
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Record not found!"})
 			return
