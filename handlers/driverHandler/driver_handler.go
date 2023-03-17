@@ -6,8 +6,12 @@ import (
 	"r-G7D/go_gin_restful/domains"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"gorm.io/gorm"
 )
+
+// var validate *validator.Validate
+var validate = validator.New()
 
 func Index(c *gin.Context) {
 	var drivers []domains.Driver
@@ -35,8 +39,19 @@ func Show(c *gin.Context) {
 
 func Create(c *gin.Context) {
 	var driver domains.Driver
-	if err := c.BindJSON(&driver); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request!"})
+	if err := c.Bind(&driver); err != nil {
+		//*Binding == data validation according to model
+		if err != gorm.ErrInvalidData {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data!"})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Bad request!"})
+			return
+		}
+	}
+
+	if err := validate.Struct(&driver); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data!"})
 		return
 	}
 
@@ -64,10 +79,21 @@ func Update(c *gin.Context) {
 	var driver domains.Driver
 	id := c.Param("id")
 
-	if err := c.BindJSON(&driver); err != nil {
+	if err := c.Bind(&driver); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Bad request!"})
 		return
 	}
+
+	if err := validate.Struct(&driver); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid data!"})
+		return
+	}
+
+	// var existingDriver domains.Driver
+	// if err := app.DB.Where("name == ? AND email == ?", driver.Name, driver.Email).First(&existingDriver); err != nil {
+	// 	c.JSON(http.StatusConflict, gin.H{"error": "Record already exists"})
+	// 	return
+	// } //! This is not working
 
 	var existingDriver domains.Driver
 	app.DB.Where("name == ? and email == ?", driver.Name, driver.Email).First(&existingDriver)
