@@ -16,6 +16,7 @@ func DefDB() {
 	}
 	//TODO: db polling
 	db.AutoMigrate(&domains.Driver{})
+	db.AutoMigrate(&domains.RegisterResponse{})
 
 	DB = db
 }
